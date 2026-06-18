@@ -10,6 +10,7 @@
 // @grant        GM_getValue
 // ==/UserScript==
 
+
 (function() {
     'use strict';
 
@@ -288,6 +289,7 @@
         },
         async init() {
             this.createAddonButton();
+            this.createStatsToggleButton();
         },
 
         createAddonButton() {
@@ -318,9 +320,38 @@
 
             document.body.appendChild(btn);
         },
+        createStatsToggleButton() {
+            const btn = document.createElement("div");
+            btn.id = "stats-toggle-btn";
+            btn.textContent = "📊";
 
+            Object.assign(btn.style, {
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                width: "28px",
+                height: "28px",
+                background: "rgba(0,0,0,0.5)",
+                border: "1px solid #4CAF50",
+                borderRadius: "4px",
+                color: "white",
+                fontSize: "18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                zIndex: 999999
+            });
 
+            btn.addEventListener("click", () => {
+                const box = document.getElementById("hero-stats-box");
+                if (!box) return;
 
+                box.style.display = box.style.display === "none" ? "block" : "none";
+            });
+
+            document.body.appendChild(btn);
+        }
 
     };
 
@@ -538,71 +569,46 @@
             });
 
             this.panel.appendChild(worldBtn);
-
             const worldMenu = document.createElement('div');
-            worldMenu.id = 'world-switch-menu';
+            worldMenu.classList.add("hmenu");
+            worldMenu.setAttribute("data-v-a6b7eea8","");
+            worldMenu.id = 'hmenu';
 
-            Object.assign(worldMenu.style, {
-                position: 'absolute',
-                right: '-28px',
-                top: '28px',
-                background: 'rgba(0,0,0,0.85)',
-                border: '1px solid #4CAF50',
-                borderRadius: '6px',
-                padding: '6px',
-                display: 'none',
-                flexDirection: 'column',
-                gap: '4px',
-                zIndex: '99999'
-            });
+
             document.body.appendChild(worldMenu);
-            const panelRect = this.panel.getBoundingClientRect();
 
-            Object.assign(worldMenu.style, {
-                position: 'absolute',
-                width: '90px',
-                top: (panelRect.top + 20) + 'px',
-                left: (panelRect.right + 5) + 'px',
-                zIndex: 999999,
-            });
 
             const worlds = [...new Set(this.characters.map(c => c.world_name || 'retro'))];
 
-            worlds.forEach(world => {
-                const item = document.createElement('div');
-                item.textContent = world;
+            for(let i = 0; i < worlds.length; i++){
 
-                Object.assign(item.style, {
-                    padding: "4px 8px",
-                    cursor: "pointer",
-                    borderRadius: "4px",
-                    transition: "background 0.15s",
-                    fontFamily: "Times New Roman",
-                    color: "white"
-                });
+                const item = document.createElement('button');
+                item.textContent = worlds[i];
 
-                item.addEventListener("mouseenter", () => {
-                    item.style.background = "rgba(76,175,80,0.25)";
-                });
-
-                item.addEventListener("mouseleave", () => {
-                    item.style.background = "transparent";
-                });
+                item.setAttribute("data-v-a6b7eea8","");
+                const brSp = document.createElement("br");
+                brSp.setAttribute("data-v-a6b7eea8","");
 
                 item.addEventListener('click', () => {
-                    this.currentWorld = world;
-                    this.renderCharacters(world);
+                    this.currentWorld = worlds[i];
+                    this.renderCharacters(worlds[i]);
                     worldMenu.style.display = 'none';
                 });
 
+                if(i+1 == worlds.length)
+                {
+                    item.classList.add("last");
+                }
                 worldMenu.appendChild(item);
-            });
+                worldMenu.appendChild(brSp);
+
+            };
 
             worldBtn.addEventListener('click', (e) => {
                 const show = worldMenu.style.display === 'none' || worldMenu.style.display === '';
 
                 if (show) {
-                    worldMenu.style.display = 'flex';
+                    worldMenu.style.display = 'block';
 
                     worldMenu.style.left = e.clientX + 'px';
                     worldMenu.style.top = (e.clientY + 10) + 'px';
@@ -705,6 +711,9 @@
 
             worldCharacters.forEach(character => {
                 const charElement = this.createCharacterElement(character);
+
+                charElement.setAttribute("data-other", `{"schema":{"inner":{"name": "${character.name}", "level": ${character.lvl}, "profession": "${character.profession}" }}}`);
+                charElement.setAttribute("data-color", '');
                 container.appendChild(charElement);
             });
         },
@@ -731,26 +740,14 @@
                 justifyContent: 'flex-start',
                 transition: 'transform 0.1s linear',
             });
-            container.addEventListener('mouseenter', () => {
-                container.style.transform = 'translateY(-8px)';
-            });
 
-            container.addEventListener('mouseleave', () => {
-                container.style.transform = 'translateY(0)';
-            });
             if (isCurrentCharacter) {
                 container.style.filter = 'drop-shadow(0 0 6px #4CAF50)';
             }
 
-            const imgWrapper = document.createElement('div');
-            Object.assign(imgWrapper.style, {
-                width: '32px',
-                height: '48px',
-                overflow: 'hidden',
-                borderRadius: '6px'
-            });
 
             const sprite = document.createElement('div');
+
             Object.assign(sprite.style, {
                 width: '32px',
                 height: '48px',
@@ -761,33 +758,8 @@
                 imageRendering: 'pixelated'
             });
 
-            imgWrapper.appendChild(sprite);
 
-            const lvl = document.createElement('span');
-            lvl.textContent = character.lvl + ' lvl';
-            Object.assign(lvl.style, {
-                display: 'block',
-                fontSize: '11px',
-                fontFamily: 'times-new-roman',
-                color: '#fff',
-                fontWeight: '600',
-                textShadow: '0 1px 3px rgba(0,0,0,0.8)'
-            });
-
-            container.appendChild(imgWrapper);
-            container.title = character.name;
-
-            container.addEventListener('mouseenter', () => {
-                if (!isCurrentCharacter) {
-                    container.style.background = 'transparent';
-                }
-                container.style.transform = 'translateY(-2px)';
-            });
-
-            container.addEventListener('mouseleave', () => {
-                container.style.background = 'transparent';
-                container.style.transform = 'translateY(0)';
-            });
+            container.appendChild(sprite);
 
             container.addEventListener('click', () => this.switchCharacter(character));
             return container;
@@ -868,9 +840,8 @@
     margin-left: 50px;
 }
 /*stats*/
-.container .window[data-v-113125a0]{
-    margin-left: -10px;
-    margin-top: 14px;
+.container[data-v-113125a0]{
+    display: none;
 }
 [data-v-3865c13a] .small-buttons {
     position: absolute;
@@ -957,6 +928,142 @@ div[data-v-92e99f9c]{
                 const oldBottomBar = 'https://i.imgur.com/f8IKicJ.png';
 
                 const panel = document.getElementById("panel");
+                const statsPanel = document.createElement("div");
+                const statsText = document.createElement("span");
+
+                const dmg = document.createElement("span");
+                const dmgM = document.createElement("span");
+                const dmgTxt = document.createElement("span");
+                const dmgMTxt = document.createElement("span");
+                const atkSpTxt = document.createElement("span");
+                const acTxt = document.createElement("span");
+                const acMTxt = document.createElement("span");
+
+                const dmgPh = document.createElement("span");
+                const dmgAux = document.createElement("span");
+                const dmgFire = document.createElement("span");
+                const dmgFrost = document.createElement("span");
+                const dmgLight = document.createElement("span");
+                const dmgPoison = document.createElement("span");
+
+                const atkSpeed = document.createElement("span");
+                const armor = document.createElement("span");
+                const armorM = document.createElement("span");
+
+                const fireRes = document.createElement("span");
+                const frostRes = document.createElement("span");
+                const lightRes = document.createElement("span");
+                const poisonRes = document.createElement("span");
+
+                const slash1 = document.createElement("span");
+                slash1.textContent = " / ";
+                const slash2 = document.createElement("span");
+                slash2.textContent = " / ";
+                const slash3 = document.createElement("span");
+                slash3.textContent = " / ";
+
+                dmg.id = "dmg";
+                dmgM.id = "dmgM";
+                dmgPh.id = "dmgPh";
+                dmgAux.id = "dmgAux";
+                dmgFire.id = "dmgFire";
+                dmgFrost.id = "dmgFrost";
+                dmgLight.id = "dmgLight";
+                dmgPoison.id = "dmgPoison";
+                atkSpeed.id = "atkSpeed";
+                armor.id = "armor";
+                armorM.id = "armorM";
+                fireRes.id = "fireRes";
+                frostRes.id = "frostRes";
+                lightRes.id = "lightRes";
+                poisonRes.id = "poisonRes";
+                statsPanel.appendChild(statsText);
+
+                dmg.style.textAlign = 'right';
+                dmg.style.fontWeight = 'bold';
+                statsPanel.appendChild(dmg);
+
+                dmgM.style.textAlign = 'right';
+                dmgM.style.fontWeight = 'bold';
+                statsPanel.appendChild(dmgM);
+
+                dmg.appendChild(dmgPh);
+
+                dmgAux.style.color = '#f90';
+                dmg.appendChild(dmgAux);
+
+                dmgFire.style.color = 'red';
+                dmgM.appendChild(dmgFire);
+
+                dmgLight.style.color = '#ff0';
+                dmgM.appendChild(dmgLight);
+
+                dmgFrost.style.color = '#9bf';
+                dmgM.appendChild(dmgFrost);
+
+                dmgPoison.style.color = '#0f0';
+                dmg.appendChild(dmgPoison);
+
+                atkSpeed.style.textAlign = 'right';
+                atkSpeed.style.fontWeight = 'bold';
+                statsPanel.appendChild(atkSpeed);
+
+                armor.style.textAlign = 'right';
+                armor.style.fontWeight = 'bold';
+                statsPanel.appendChild(armor);
+
+                armorM.style.textAlign = 'right';
+                armorM.style.fontWeight = 'bold';
+                statsPanel.appendChild(armorM);
+
+                fireRes.style.color = 'red';
+                armorM.appendChild(fireRes);
+                armorM.appendChild(slash1);
+
+                lightRes.style.color = '#ff0';
+                armorM.appendChild(lightRes);
+                armorM.appendChild(slash2);
+
+                frostRes.style.color = '#9bf';
+                armorM.appendChild(frostRes);
+                armorM.appendChild(slash3);
+
+                poisonRes.style.color = '#0f0';
+                armorM.appendChild(poisonRes);
+
+
+
+                statsPanel.style.width = '100px';
+                statsPanel.style.height = '80px';
+                statsPanel.style.marginTop = '100px';
+                statsPanel.style.marginLeft = '145px';
+                statsPanel.style.fontSize = '11px';
+                statsPanel.style.lineHeight = '15px';
+                statsPanel.style.display = 'flex';
+                statsPanel.style.flexDirection = 'column';
+                statsPanel.id = "statsPanel";
+
+
+                statsText.style.display = 'flex';
+                statsText.style.flexDirection = 'column';
+
+                statsText.style.position = 'absolute';
+                dmgTxt.textContent = 'Atak:';
+                dmgMTxt.textContent = 'Atak M:';
+                atkSpTxt.textContent = 'SA:';
+                acTxt.textContent = 'AC:';
+                acMTxt.textContent = 'ACM:';
+                dmgTxt.id = 'dmgTxt';
+                dmgMTxt.id = 'dmgMTxt';
+                statsText.appendChild(dmgTxt);
+                statsText.appendChild(dmgMTxt);
+                statsText.appendChild(atkSpTxt);
+                statsText.appendChild(acTxt);
+                statsText.appendChild(acMTxt);
+
+
+                panel.appendChild(statsPanel);
+
                 if (panel) {
                     panel.style.backgroundImage = `url(${oldPanel})`;
                     panel.style.backgroundSize = 'cover';
@@ -1028,7 +1135,7 @@ div[data-v-92e99f9c]{
                 }
 
                 const img = document.createElement("div");
-                img.style = `background-image: url("${currentChar.src}"); width: 32px; height: 48px;  margin-left: 38px; image-rendering: pixelated;`;
+                img.style = `background-image: url("${currentChar.src}"); width: 32px; height: 48px;  top: 30px; left: 38px; position: absolute; image-rendering: pixelated;`;
                 document.getElementById("panel").appendChild(img);
 
             }
@@ -1061,11 +1168,26 @@ div[data-v-92e99f9c]{
             const query = `
         query {
         hero {
+
         name,
         strength,
         dexterity,
         intelligence,
         gold
+
+        physicalDamage
+        fireDamage
+        frostDamage
+        lightDamage
+        poisonDamage
+        auxiliaryDamage
+
+        armor
+        attackSpeed
+        poisonResistance
+        frostResistance
+        fireResistance
+        lightResistance
         }
         }
         `;
@@ -1073,20 +1195,224 @@ div[data-v-92e99f9c]{
 
                 const container = document.querySelector('div.container[data-v-1ceaa76c][data-v-3865c13a]');
                 const containerGold = document.querySelector('span[data-v-27e581d9][data-color]');
+                const statsPanel = document.getElementById("statsPanel");
+                const dmgTxt = document.getElementById("dmgTxt");
+                const dmgMTxt = document.getElementById("dmgMTxt");
+                const dmg = document.getElementById("dmg");
+                const dmgM = document.getElementById("dmgM");
+                const dmgPh = document.getElementById("dmgPh");
+                const dmgAux = document.getElementById("dmgAux");
+                const dmgFire = document.getElementById("dmgFire");
+                const dmgFrost = document.getElementById("dmgFrost");
+                const dmgLight = document.getElementById("dmgLight");
+                const dmgPoison = document.getElementById("dmgPoison");
+                const atkSpeed = document.getElementById("atkSpeed");
+                const armor = document.getElementById("armor");
+                const fireRes = document.getElementById("fireRes");
+                const frostRes = document.getElementById("frostRes");
+                const lightRes = document.getElementById("lightRes");
+                const poisonRes = document.getElementById("poisonRes");
+                const armorM = document.getElementById("armorM");
+
+
                 if (!container) return;
                 const heroObj = data.hero;
 
                 container.style = 'text-align: center';
                 container.innerText = `Siła: ${heroObj.strength} Zręcz.: ${heroObj.dexterity} Intel.: ${heroObj.intelligence}`;
+                if(heroObj.physicalDamage > 0 || heroObj.auxiliaryDamage > 0 || heroObj.poisonDamage > 0) dmgTxt.style.display = 'block'; else dmgTxt.style.display = 'none';
+                if(heroObj.fireDamage > 0 || heroObj.frostDamage > 0 || heroObj.lightDamage > 0) dmgMTxt.style.display = 'block'; else dmgMTxt.style.display = 'none';
+                if(heroObj.physicalDamage > 0) dmgPh.textContent = `+${heroObj.physicalDamage}`; else dmgPh.textContent = "";
+                if(heroObj.auxiliaryDamage > 0) dmgAux.textContent = `+${heroObj.auxiliaryDamage}`; else dmgAux.textContent = "";
+                if(heroObj.poisonDamage > 0) dmgPoison.textContent = `+${heroObj.poisonDamage}`; else dmgPoison.textContent = "";
+                if(heroObj.fireDamage > 0) dmgFire.textContent = `~${heroObj.fireDamage}`; else dmgFire.textContent = "";
+                if(heroObj.frostDamage > 0) dmgFrost.textContent = `+${heroObj.frostDamage}`; else dmgFrost.textContent = "";
+                if(heroObj.lightDamage > 0) dmgLight.textContent = `+${heroObj.lightDamage}`; else dmgLight.textContent = "";
+                if(heroObj.attackSpeed > 0) atkSpeed.textContent = `${heroObj.attackSpeed}`; else atkSpeed.textContent = "0";
+                if(heroObj.armor > 0) armor.textContent = `${heroObj.armor}`; else armor.textContent = "0";
+                if(heroObj.fireResistance > 0) fireRes.textContent = `${heroObj.fireResistance}`; else fireRes.textContent = "0";
+                if(heroObj.lightResistance > 0) lightRes.textContent = `${heroObj.lightResistance}`; else lightRes.textContent = "0";
+                if(heroObj.frostResistance > 0) frostRes.textContent = `${heroObj.frostResistance}`; else frostRes.textContent = "0";
+                if(heroObj.poisonResistance > 0) poisonRes.textContent = `${heroObj.poisonResistance}`; else poisonRes.textContent = "0";
                 containerGold.style = 'text-align: center; color: gold;';
                 containerGold.innerText = `Złoto: ${heroObj.gold}`;
             });
         }
     };
 
+    const HeroStats = {
+        box: null,
+        init() {
+            if (document.getElementById("hero-stats-box")) return;
+
+            this.box = document.createElement("div");
+            this.box.id = "hero-stats-box";
+
+            Object.assign(this.box.style, {
+                position: "absolute",
+                top: "3px",
+                right: "3px",
+                width: "180px",
+                maxHeight: "480px",
+                overflow: "auto",
+                padding: "10px",
+                background: "rgba(0,0,0,0.75)",
+                border: "1px solid #4CAF50",
+                borderRadius: "6px",
+                color: "white",
+                fontFamily: "Times New Roman",
+                fontSize: "14px",
+                zIndex: 999999,
+                lineHeight: "18px",
+                display: "none"
+            });
+
+            this.box.innerHTML = "Ładowanie danych...";
+
+            document.getElementById("game-map-window").appendChild(this.box);
+        },
+    async updateBox() {
+        const query = `
+        query {
+  hero {
+    id
+    name
+    profession
+    lvl
+
+    gold
+    goldLimit
+
+    hp
+    fullHp
+
+    exp
+    minExpForCurrentLvl
+    minExpForNextLvl
+
+    strength
+    intelligence
+    dexterity
+
+    physicalDamage
+    fireDamage
+    frostDamage
+    lightDamage
+    poisonDamage
+    auxiliaryDamage
+
+    armor
+    attackSpeed
+
+    physicalDamageAbsorption
+    magicalDamageAbsorption
+
+criticChance
+criticStrength
+frostMagicCriticStrength
+fireMagicCriticStrength
+lightMagicCriticStrength
+
+
+    evadePoints
+    evadeChance
+
+
+    healthRestoration
+
+    blockPoints
+    blockChance
+
+    poisonResistance
+    frostResistance
+    fireResistance
+    lightResistance
+
+    mana
+    energy
+    dragonTears
+    honorPoints
+  }
+}
+`;
+
+        try {
+            const data = await GraphQLManager.query(query);
+            const h = data.hero;
+
+            this.box.innerHTML = `
+    <div style="font-size:16px; margin-bottom:6px;">
+        <b>${h.name}</b> <span style="opacity:0.7">(${h.lvl}${h.profession})</span>
+    </div>
+
+    <b>Zdrowie:</b><br>
+    HP: ${h.hp} / ${h.fullHp}<br><br>
+
+    <b>Doświadczenie:</b><br>${h.exp}<br>
+    Do następnego poziomu:<br>${h.minExpForNextLvl - h.exp}<br>
+
+    <b>Złoto:</b><br>
+    ${h.gold}<br><br>
+
+    <b>Statystyki główne:</b><br>
+    Siła: ${h.strength}<br>
+    Zręczność: ${h.dexterity}<br>
+    Inteligencja: ${h.intelligence}<br><br>
+
+    <b>Obrażenia:</b><br>
+    Fizyczne: ${h.physicalDamage}<br>
+    Ogień: ${h.fireDamage}<br>
+    Zimno: ${h.frostDamage}<br>
+    Błyskawice: ${h.lightDamage}<br>
+    Trucizna: ${h.poisonDamage}<br>
+    Pomocnicze: ${h.auxiliaryDamage}<br><br>
+
+    <b>Krytyki:</b><br>
+    Szansa: ${h.criticChance}%<br>
+    Siła: ${h.criticStrength}<br>
+    Kryt zimno: ${h.frostMagicCriticStrength}<br>
+    Kryt ogień: ${h.fireMagicCriticStrength}<br>
+    Kryt błyskawice: ${h.lightMagicCriticStrength}<br><br>
+
+    <b>Obrona:</b><br>
+    Pancerz: ${h.armor}<br>
+    Szybkość ataku: ${h.attackSpeed}<br>
+    Absorpcja fizyczna: ${h.physicalDamageAbsorption}<br>
+    Absorpcja magiczna: ${h.magicalDamageAbsorption}<br><br>
+
+    <b>Uniki i blok:</b><br>
+    Unik: ${h.evadeChance}% (${h.evadePoints} pkt)<br>
+    Blok: ${h.blockChance}% (${h.blockPoints} pkt)<br><br>
+
+    <b>Regeneracja:</b><br>
+    Leczenie: ${h.healthRestoration}<br><br>
+
+    <b>Odporności:</b><br>
+    Ogień: ${h.fireResistance}%<br>
+    Zimno: ${h.frostResistance}%<br>
+    Błyskawice: ${h.lightResistance}%<br>
+    Trucizna: ${h.poisonResistance}%<br><br>
+
+    <b>Zasoby:</b><br>
+    Mana: ${h.mana}<br>
+    Energia: ${h.energy}<br>
+    Smocze łzy: ${h.dragonTears}<br>
+    Punkty Honoru: ${h.honorPoints}<br>
+`;
+
+        } catch (err) {
+            this.box.innerHTML = "Błąd pobierania danych";
+            console.error("[HeroStatsBox]", err);
+        }
+    }
+};
+
+
+
     window.addEventListener('load', () => {
         GraphQLManager.init();
         Elements.init();
+        HeroStats.init();
         if (AddonSettings.get("characterSwitcher")) CharacterSwitcher.init();
         if (AddonSettings.get("oldInterface")) {
             OldMargoInterface.init();
@@ -1095,5 +1421,6 @@ div[data-v-92e99f9c]{
 
     window.addEventListener('graphql-update', () => {
         OldMargoInterface.updateStats();
+        HeroStats.updateBox();
     });
 })();
